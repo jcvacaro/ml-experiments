@@ -1,9 +1,10 @@
 import torch
 from torch.utils.data import DataLoader, Subset
 import pytorch_lightning as pl
+import torchvision
+import torchvision.transforms as T
 
 from dataset import SyndokuDataset
-import vision.references.detection.transforms as T
 
 def collate_fn(batch):
     return tuple(zip(*batch))

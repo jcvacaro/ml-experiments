@@ -86,7 +86,7 @@ class SyndokuDataset(Dataset):
             'iscrowd': iscrowd,
         }
 
-        return self.transforms(img, target)
+        return self.transforms(img), target
 
 if __name__ == '__main__':
     from pprint import pprint

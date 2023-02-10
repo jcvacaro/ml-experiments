@@ -11,7 +11,7 @@ def get_optimizer(args, model, params):
         return torch.optim.SGD(params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     if args.optimizer == 'adam':
         return torch.optim.Adam(params, lr=args.lr)
-    raise Exception('not supported optimizer', args.optimizer)
+    raise ValueError('not supported optimizer', args.optimizer)
 
 def get_lr_scheduler(args, optimizer):
     if args.lr_scheduler == 'steplr':

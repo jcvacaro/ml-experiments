@@ -26,11 +26,11 @@ def train(args, experiment_name='default', callbacks=[]):
         tracking_uri='file:./mlruns',
     )
     common.train.add_lightning_callbacks(args, callbacks)
-    trainer = pl.Trainer.from_argparse_args(args, logger=mlf_logger, callbacks=callbacks)
     data = SyndokuData(args)
     model = SyndokuDetection(args, data)
+    trainer = pl.Trainer.from_argparse_args(args, callbacks=callbacks, logger=mlf_logger)
     trainer.fit(model, data)
-    return trainer.callback_metrics
+    # return trainer.callback_metrics
 
 if __name__ == '__main__':
     parser = ArgumentParser()

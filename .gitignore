@@ -1,3 +1,9 @@
+# MACOSX
+.DS_Store
+
+# pytorch lightning
+lightning_logs/
+
 # mlflow
 mlruns/
 

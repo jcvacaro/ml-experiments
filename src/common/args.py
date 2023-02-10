@@ -17,7 +17,6 @@ def add_training_argparse_args(parent_parser):
 def add_model_argparse_args(parent_parser):
     parser = parent_parser.add_argument_group('model')
     parser.add_argument('--model', default='fasterrcnn_resnet50_fpn', help='The model name')
-    parser.add_argument("--pretrained", help="Use pre-trained models from the modelzoo", action="store_true")
     return parent_parser
 
 def add_dataset_argparse_args(parent_parser):

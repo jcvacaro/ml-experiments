@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.9-slim
 
 # Ubuntu packages
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
@@ -27,6 +27,6 @@ RUN pip3 install \
     mlflow \
     pycocotools \
     pytorch-lightning \
-    torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+    torch==1.9.0+cpu torchvision==0.10.0+cpu torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
 
 WORKDIR "/workspace"
