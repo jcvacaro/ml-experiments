@@ -4,6 +4,7 @@ import torch
 import torchvision
 import torchvision.models.detection
 import pytorch_lightning as pl
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
 import mlflow
 import mlflow.pytorch
 
@@ -25,6 +26,7 @@ class SyndokuDetection(pl.LightningModule):
         self.save_hyperparameters(args, logger=False)
         self.data = data_module
         self.model = self._create_model()
+        self.metric = MeanAveragePrecision()
 
     def _create_model(self):
         kwargs = {"trainable_backbone_layers": self.hparams.trainable_backbone_layers}
@@ -49,6 +51,18 @@ class SyndokuDetection(pl.LightningModule):
         loss = sum(loss for loss in loss_dict.values())
         self.log('train_loss', loss)
         return loss
+
+    def validation_step(self, batch, batch_idx):
+        images, targets = batch
+        preds = self.forward(images)
+        self.metric.update(preds, targets)
+        return {}
+
+    def validation_epoch_end(self, outputs):
+        metrics = self.metric.compute()
+        self.metric.reset()
+        self.log_dict(metrics)
+        return metrics
 
     def configure_optimizers(self):
         model_params = [p for p in self.model.parameters() if p.requires_grad]
