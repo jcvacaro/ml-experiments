@@ -10,8 +10,10 @@ def add_optuna_argparse_args(parent_parser):
 
 def add_training_argparse_args(parent_parser):
     parser = parent_parser.add_argument_group('training')
-    parser.add_argument('-s', '--seed', default=33, type=int, help='Fix seed for the experiments')
+    parser.add_argument('-s', '--seed', default=42, type=int, help='Fix seed for the experiments')
     parser.add_argument("--discard-model", dest="save_model", help="Do not save the model", action="store_false")
+    parser.add_argument('--experiment-name', default='default', help='The experiment name for logging')
+    parser.add_argument('--run-id', default=None, help='The run identifier for logging')
     return parent_parser
 
 def add_model_argparse_args(parent_parser):

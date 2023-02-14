@@ -1,13 +1,9 @@
 #!/bin/sh
 
-DOCKER_IMAGE='ml-exp:01'
+rm -rf mlruns/
 
-docker run \
-    -it \
-    --rm \
-    --ipc=host \
-    --shm-size=4gb \
-    -p 8888:8888 \
-    -v $PWD/../..:/workspace \
-    -v $HOME/Workspace/jcvacaro/syndoku/dataset:/data \
-    $DOCKER_IMAGE /bin/bash
+python3 train.py \
+    --dataset-dir ../../../syndoku/dataset \
+    --batch-size 4 \
+    --max_epochs 10 \
+    --lr 3e-5

@@ -3,6 +3,8 @@ from torch.utils.data import DataLoader, Subset
 import pytorch_lightning as pl
 import torchvision
 import torchvision.transforms as T
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 from dataset import SyndokuDataset
 
@@ -20,17 +22,14 @@ class SyndokuData(pl.LightningDataModule):
 
     @property
     def train_transform(self):
-        return T.Compose([
-            T.PILToTensor(),
-            T.ConvertImageDtype(torch.float),
-        ])
+        return A.Compose([
+            A.Resize(256, 256), 
+            ToTensorV2()
+        ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['class_labels']))
 
     @property
     def val_transform(self):
-        return T.Compose([
-            T.PILToTensor(),
-            T.ConvertImageDtype(torch.float),
-        ])
+        return self.train_transform
 
     def setup(self, stage):
         if stage == 'fit' or stage is None:
@@ -45,14 +44,15 @@ class SyndokuData(pl.LightningDataModule):
             self.dt_val = Subset(self.dataset, indices[-val_size:])
             self.dims = self.dt_train[0][0].shape
 
-    def train_dataloader(self):
-        return DataLoader(dataset=self.dt_train, batch_size=self.args.batch_size, num_workers=self.args.workers, collate_fn=collate_fn)
-
-    def val_dataloader(self):
-        return DataLoader(dataset=self.dt_val, batch_size=1, num_workers=self.args.workers, collate_fn=collate_fn)
-
     def train_dataset(self):
         return self.dt_train
 
     def val_dataset(self):
-        return self.dt_val
+        # return self.dt_val
+        return self.dt_train
+
+    def train_dataloader(self):
+        return DataLoader(dataset=self.train_dataset(), batch_size=self.args.batch_size, num_workers=self.args.workers, collate_fn=collate_fn)
+
+    def val_dataloader(self):
+        return DataLoader(dataset=self.val_dataset(), batch_size=1, num_workers=self.args.workers, collate_fn=collate_fn)

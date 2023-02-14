@@ -2,9 +2,11 @@ import os
 import json
 import numpy as np
 import torch
+from torchvision.transforms import functional as F
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from typing import Mapping
+import cv2
 
 def document_iterate(element):
         if isinstance(element, list):
@@ -54,7 +56,8 @@ class SyndokuDataset(Dataset):
 
     def __getitem__(self, idx):
         # get the image
-        img = Image.open(self.get_image_path(idx)).convert('RGB')
+        img = cv2.imread(self.get_image_path(idx))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # extract bounding boxes from the labels
         doc = json.load(open(self.get_label_path(idx)))
@@ -63,17 +66,17 @@ class SyndokuDataset(Dataset):
         for element in document_iterate(doc):
             if element['label'] in ['token', 'image']:
                 bboxes.append((element['bbox']['x1'], element['bbox']['y1'], element['bbox']['x2'], element['bbox']['y2']))
-                labels.append(self.label_dict[element['label']])
+                labels.append(element['label'])
+
+        # transforms
+        transformed = self.transforms(image=img, bboxes=bboxes, class_labels=labels)
+        img = F.convert_image_dtype(transformed['image'])
+        bboxes = transformed['bboxes']
+        labels = transformed['class_labels']
 
         # prepare the target dictionary
-        image_id = torch.tensor([idx])
-        labels = torch.as_tensor(labels, dtype=torch.int64)
-        iscrowd = torch.zeros_like(labels) # suppose all instances are not crowd
+        labels = torch.as_tensor([self.label_dict[label] for label in labels], dtype=torch.int64)
         bboxes = torch.as_tensor(bboxes, dtype=torch.float32)
-        if len(bboxes) <= 0:
-            area = torch.zeros_like(bboxes)
-        else:
-            area = bboxes[:, 2] * bboxes[:, 3] # w*h
 
         # Check for degenerate boxes
         self.fix_degenerate_boxes(bboxes)
@@ -81,22 +84,5 @@ class SyndokuDataset(Dataset):
         target = {
             'boxes': bboxes,
             'labels': labels,
-            'image_id': image_id,
-            'area': area,
-            'iscrowd': iscrowd,
         }
-
-        return self.transforms(img), target
-
-if __name__ == '__main__':
-    from pprint import pprint
-    dt = SyndokuDataset('/data')
-    print(f'size: {len(dt)}')
-    print(f'classes: {dt.get_classes()}')
-    print(f'num_classes: {dt.num_classes}')
-
-    for i in range(3):
-        img, tgt = dt[i]
-        print(tgt)
-
-    print('done')
+        return img, target
