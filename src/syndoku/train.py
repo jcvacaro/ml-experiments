@@ -17,10 +17,7 @@ def add_argparse_args(parser):
     return parser
 
 def train(args):
-    mlflow.start_run(run_id=args.run_id)
-    for k, v in args.__dict__.items():
-        mlflow.log_param(k, v)
-
+    mlflow.log_params(args.__dict__)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     common.train.seed_everything(args)
     data = SyndokuData(args)
@@ -44,6 +41,12 @@ def train(args):
         if lr_scheduler:
             lr_scheduler.step()
 
+        # evaluate after every epoch
+        metrics = evaluate(args, model, data.val_dataloader(), device)
+        for k, v in metrics.items():
+            mlflow.log_metric(k, float(v), step=epoch)
+        print(f'[Epoch={epoch}] train_loss:{train_loss}; map:{metrics["map"]};')
+
         # save checkpoint
         checkpoint = {
             "model": model.state_dict(),
@@ -52,12 +55,6 @@ def train(args):
             "epoch": epoch,
         }
         mlflow.pytorch.log_model(model, 'checkpoint')
-
-        # evaluate after every epoch
-        metrics = evaluate(args, model, data.val_dataloader(), device)
-        for k, v in metrics.items():
-            mlflow.log_metric(k, float(v), step=epoch)
-        print(f'[Epoch={epoch}] train_loss:{train_loss}; map:{metrics["map"]};')
 
     # done!
     print('training done')
@@ -112,4 +109,5 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser = add_argparse_args(parser)
     args = parser.parse_args()
-    train(args)
+    with mlflow.start_run(run_id=args.run_id):
+        train(args)
