@@ -1,6 +1,5 @@
 import torch
 from torch.utils.data import DataLoader, Subset
-import pytorch_lightning as pl
 import torchvision
 import torchvision.transforms as T
 import albumentations as A
@@ -11,10 +10,10 @@ from dataset import SyndokuDataset
 def collate_fn(batch):
     return tuple(zip(*batch))
 
-class SyndokuData(pl.LightningDataModule):
+class SyndokuData:
     def __init__(self, args):
-        super().__init__()
         self.args = args
+        self.setup(None)
 
     @property
     def num_classes(self):

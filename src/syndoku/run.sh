@@ -5,5 +5,6 @@ rm -rf mlruns/
 python3 train.py \
     --dataset-dir ../../../syndoku/dataset \
     --batch-size 4 \
-    --max_epochs 10 \
-    --lr 3e-5
+    --epochs 2
+
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/studio-lab-user/.conda/envs/ml/lib

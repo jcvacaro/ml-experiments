@@ -2,9 +2,6 @@ import random
 import numpy as np
 import torch
 import torchvision
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.callbacks import LearningRateMonitor
 
 def get_optimizer(args, model, params):
     if args.optimizer == 'sgd':
@@ -20,12 +17,11 @@ def get_lr_scheduler(args, optimizer):
         return torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
     return None
 
-def add_lightning_callbacks(args, callbacks):
-    callbacks.append(LearningRateMonitor())
-    if args.early_stopping:
-        callbacks.append(EarlyStopping(
-            monitor=args.es_monitor,
-            mode=args.es_mode,
-            verbose=args.es_verbose,
-            patience=args.es_patience,
-        ))
+# https://pytorch.org/docs/stable/notes/randomness.html
+def seed_everything(args):
+    if args.seed >= 0:
+        print('applying deterministic settings ...')
+        torch.manual_seed(args.seed)
+        torch.use_deterministic_algorithms(True)
+        random.seed(args.seed)
+        np.random.seed(args.seed)

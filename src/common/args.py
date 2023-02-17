@@ -12,8 +12,11 @@ def add_training_argparse_args(parent_parser):
     parser = parent_parser.add_argument_group('training')
     parser.add_argument('-s', '--seed', default=42, type=int, help='Fix seed for the experiments')
     parser.add_argument("--discard-model", dest="save_model", help="Do not save the model", action="store_false")
-    parser.add_argument('--experiment-name', default='default', help='The experiment name for logging')
     parser.add_argument('--run-id', default=None, help='The run identifier for logging')
+    parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
+    parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
+    parser.add_argument("--start_epoch", default=0, type=int, help="start epoch")
+    parser.add_argument("--epochs", default=10, type=int, help="the number of epoch")
     return parent_parser
 
 def add_model_argparse_args(parent_parser):
