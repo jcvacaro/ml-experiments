@@ -62,13 +62,13 @@ def train(args):
 def train_one_epoch(args, model, optimizer, data_loader, device, epoch):
     model.train()
 
-    # lr_scheduler = None
-    # if epoch == 0:
-    #     warmup_factor = 1.0 / 1000
-    #     warmup_iters = min(1000, len(data_loader) - 1)
-    #     lr_scheduler = torch.optim.lr_scheduler.LinearLR(
-    #         optimizer, start_factor=warmup_factor, total_iters=warmup_iters
-    #     )
+    lr_scheduler = None
+    if epoch == 0:
+        warmup_factor = 1.0 / 1000
+        warmup_iters = min(1000, len(data_loader) - 1)
+        lr_scheduler = torch.optim.lr_scheduler.LinearLR(
+            optimizer, start_factor=warmup_factor, total_iters=warmup_iters
+        )
 
     loss_total, loss_count = 0.0, 0.0
     for images, targets in data_loader:
@@ -89,8 +89,8 @@ def train_one_epoch(args, model, optimizer, data_loader, device, epoch):
         losses.backward()
         optimizer.step()
 
-        # if lr_scheduler is not None:
-        #     lr_scheduler.step()
+        if lr_scheduler is not None:
+            lr_scheduler.step()
 
     return loss_total / loss_count
 

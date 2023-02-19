@@ -22,6 +22,6 @@ def seed_everything(args):
     if args.seed >= 0:
         print('applying deterministic settings ...')
         torch.manual_seed(args.seed)
-        torch.use_deterministic_algorithms(True)
+        # torch.use_deterministic_algorithms(True)
         random.seed(args.seed)
         np.random.seed(args.seed)

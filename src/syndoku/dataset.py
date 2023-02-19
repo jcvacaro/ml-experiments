@@ -1,3 +1,4 @@
+import glob
 import os
 import json
 import numpy as np
@@ -24,6 +25,7 @@ class SyndokuDataset(Dataset):
     label_dict = {
         'token': 1,
         'image': 2,
+        'bullet': 3,
     }
     num_classes = len(list(label_dict.keys()))
 
@@ -35,19 +37,19 @@ class SyndokuDataset(Dataset):
         """
         self.root_dir = root_dir
         self.transforms = transforms
-        self.files = sorted(os.listdir(self.root_dir))
+        self.files = sorted(glob.glob(os.path.join(self.root_dir, '*.png')))
 
     def get_classes(self):
         return list(self.label_dict.keys())
 
     def __len__(self):
-        return int(len(self.files) / 2)
+        return len(self.files)
 
     def get_image_path(self, idx):
-        return os.path.join(self.root_dir, self.files[(idx * 2) + 1])
+        return self.files[idx]
 
     def get_label_path(self, idx):
-        return os.path.join(self.root_dir, self.files[idx * 2])
+        return self.get_image_path(idx).replace('.png', '.json')
 
     def fix_degenerate_boxes(self, boxes):
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
@@ -64,7 +66,7 @@ class SyndokuDataset(Dataset):
         bboxes = []
         labels = []
         for element in document_iterate(doc):
-            if element['label'] in ['token', 'image']:
+            if element['label'] in self.label_dict:
                 bboxes.append((element['bbox']['x1'], element['bbox']['y1'], element['bbox']['x2'], element['bbox']['y2']))
                 labels.append(element['label'])
 
