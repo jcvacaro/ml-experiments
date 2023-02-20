@@ -2,10 +2,9 @@ import torch
 from torch.utils.data import DataLoader, Subset
 import torchvision
 import torchvision.transforms as T
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
 
 from dataset import SyndokuDataset
+import transforms
 
 def collate_fn(batch):
     return tuple(zip(*batch))
@@ -21,10 +20,11 @@ class SyndokuData:
 
     @property
     def train_transform(self):
-        return A.Compose([
-            A.Resize(256, 256), 
-            ToTensorV2()
-        ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['class_labels']))
+        return transforms.Compose([
+            transforms.Resize(256, 256), 
+            transforms.PILToTensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ])
 
     @property
     def val_transform(self):
@@ -47,11 +47,37 @@ class SyndokuData:
         return self.dt_train
 
     def val_dataset(self):
-        # return self.dt_val
-        return self.dt_train
+        return self.dt_val
 
     def train_dataloader(self):
         return DataLoader(dataset=self.train_dataset(), batch_size=self.args.batch_size, num_workers=self.args.workers, collate_fn=collate_fn)
 
     def val_dataloader(self):
         return DataLoader(dataset=self.val_dataset(), batch_size=1, num_workers=self.args.workers, collate_fn=collate_fn)
+
+if __name__ == '__main__':
+    from argparse import ArgumentParser
+    import os
+    import train
+
+    parser = ArgumentParser()
+    parser = train.add_argparse_args(parser)
+    args = parser.parse_args('')
+    args.dataset_dir = '/Users/jvacaro/data/syndoku'
+    data = SyndokuData(args)
+    dataset = data.train_dataset()
+    print('train dataset length:', len(dataset))
+    print('val dataset length:', len(data.val_dataset()))
+
+    errors = 0
+    for i in range(len(dataset)):
+        try:
+            img, target = dataset[i]
+        except:
+            errors += 1
+            # print(i)
+            # print(dataset.dataset.get_image_path(i))
+            # print(dataset.dataset.get_label_path(i))
+            # exit(0)
+
+    print('errors:', errors)

@@ -1,13 +1,12 @@
 import glob
-import os
 import json
 import numpy as np
+import os
+from PIL import Image
 import torch
 from torchvision.transforms import functional as F
-from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from typing import Mapping
-import cv2
 
 def document_iterate(element):
         if isinstance(element, list):
@@ -58,8 +57,7 @@ class SyndokuDataset(Dataset):
 
     def __getitem__(self, idx):
         # get the image
-        img = cv2.imread(self.get_image_path(idx))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = Image.open(self.get_image_path(idx)).convert('RGB')
 
         # extract bounding boxes from the labels
         doc = json.load(open(self.get_label_path(idx)))
@@ -68,16 +66,10 @@ class SyndokuDataset(Dataset):
         for element in document_iterate(doc):
             if element['label'] in self.label_dict:
                 bboxes.append((element['bbox']['x1'], element['bbox']['y1'], element['bbox']['x2'], element['bbox']['y2']))
-                labels.append(element['label'])
-
-        # transforms
-        transformed = self.transforms(image=img, bboxes=bboxes, class_labels=labels)
-        img = F.convert_image_dtype(transformed['image'])
-        bboxes = transformed['bboxes']
-        labels = transformed['class_labels']
+                labels.append(self.label_dict[element['label']])
 
         # prepare the target dictionary
-        labels = torch.as_tensor([self.label_dict[label] for label in labels], dtype=torch.int64)
+        labels = torch.as_tensor(labels, dtype=torch.int64)
         bboxes = torch.as_tensor(bboxes, dtype=torch.float32)
 
         # Check for degenerate boxes
@@ -87,4 +79,6 @@ class SyndokuDataset(Dataset):
             'boxes': bboxes,
             'labels': labels,
         }
+        # if self.transforms is not None:
+        img, target = self.transforms(img, target)
         return img, target
