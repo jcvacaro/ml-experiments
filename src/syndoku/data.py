@@ -61,15 +61,13 @@ class SyndokuData:
 if __name__ == '__main__':
     from argparse import ArgumentParser
     import os
+    from pathlib import Path
     import train
-
-    import signal
-    signal.signal(signal.SIGINT, lambda signum, frame: exit(1))
 
     parser = ArgumentParser()
     parser = train.add_argparse_args(parser)
     args = parser.parse_args('')
-    args.dataset_dir = '/Users/jvacaro/data/syndoku'
+    args.dataset_dir = Path.home() / 'data/syndoku'
     data = SyndokuData(args)
     dataset = data.train_dataset().dataset
     print('dataset len:', len(dataset))
