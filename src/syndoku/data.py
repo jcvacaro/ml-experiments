@@ -16,12 +16,12 @@ class SyndokuData:
 
     @property
     def num_classes(self):
-        return SyndokuDataset.num_classes
+        return self.dataset.num_classes
 
     @property
     def train_transform(self):
         return transforms.Compose([
-            transforms.Resize(256, 256), 
+            transforms.Resize(448, 448), 
             transforms.PILToTensor(),
             transforms.ConvertImageDtype(torch.float),
         ])
@@ -36,12 +36,15 @@ class SyndokuData:
             # select a training subset if specified
             indices = torch.randperm(len(self.dataset)).tolist()
             if self.args.dataset_train_subset > 0:
-                indices = indices[:self.args.train_dataset_subset]
+                indices = indices[:self.args.dataset_train_subset]
             # train/val dataset split
             val_size = int(self.args.dataset_val_split * len(indices))
             self.dt_train = Subset(self.dataset, indices[:-val_size])
             self.dt_val = Subset(self.dataset, indices[-val_size:])
             self.dims = self.dt_train[0][0].shape
+            print('training dataset size:', len(self.dt_train))
+            print('Validation dataset size:', len(self.dt_val))
+            print('Dataset labels:', self.dataset.num_classes)
 
     def train_dataset(self):
         return self.dt_train
@@ -60,24 +63,27 @@ if __name__ == '__main__':
     import os
     import train
 
+    import signal
+    signal.signal(signal.SIGINT, lambda signum, frame: exit(1))
+
     parser = ArgumentParser()
     parser = train.add_argparse_args(parser)
     args = parser.parse_args('')
     args.dataset_dir = '/Users/jvacaro/data/syndoku'
     data = SyndokuData(args)
-    dataset = data.train_dataset()
-    print('train dataset length:', len(dataset))
-    print('val dataset length:', len(data.val_dataset()))
+    dataset = data.train_dataset().dataset
+    print('dataset len:', len(dataset))
 
     errors = 0
     for i in range(len(dataset)):
         try:
             img, target = dataset[i]
+            boxes = target['boxes']
+            if (boxes[:, :] <= 0).any() or (boxes[:, :] >= 448).any():
+                raise ValueError()
         except:
             errors += 1
-            # print(i)
-            # print(dataset.dataset.get_image_path(i))
-            # print(dataset.dataset.get_label_path(i))
-            # exit(0)
+            print(dataset.get_image_path(i))
+            print(dataset.get_label_path(i))
 
     print('errors:', errors)

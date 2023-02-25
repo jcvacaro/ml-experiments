@@ -13,6 +13,8 @@ from PyQt6 import QtGui
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 
+MODEL_IMAGE_SIZE = 448
+
 def qimage_to_numpy(qimage):
     qimage = qimage.convertToFormat(QtGui.QImage.Format.Format_RGB888)
     width = qimage.width()
@@ -23,6 +25,7 @@ def qimage_to_numpy(qimage):
 
 def get_bboxes_from_model(model, image):
     image = Image.fromarray(image, 'RGB')
+    image = image.resize((MODEL_IMAGE_SIZE, MODEL_IMAGE_SIZE), Image.BILINEAR)
     image_tensor = F.to_tensor(image)
     with torch.no_grad():
         output = model([image_tensor])
@@ -91,15 +94,9 @@ def get_mask_from_model(model, image, threshold = 0.5):
     return output[0, :, :].numpy() # only text at this point
 
 def get_model(model_name, num_classes, checkpoint):
-    model = torch.load(checkpoint, map_location='cpu')
-    model.model.eval()
+    model = torch.load('model.pth', map_location='cpu')
     model.eval()
     return model
-    # model = torchvision.models.get_model(model_name, weights=None, weights_backbone=None, num_classes=num_classes)
-    # checkpoint = torch.load(checkpoint, map_location='cpu')
-    # model.load_state_dict(checkpoint)
-    # model.eval()
-    # return model
 
 class Window(QtWidgets.QWidget):
     def __init__(self):
@@ -169,7 +166,12 @@ class Window(QtWidgets.QWidget):
             print('no bboxes detected')
             return
         for i in range(self.bboxes.shape[0]):
-            painter.drawRect(self.bboxes[i][0], self.bboxes[i][1], self.bboxes[i][2]-self.bboxes[i][0], self.bboxes[i][3]-self.bboxes[i][1])
+            self.bboxes[i][0] *= self.pixmap.width() * 1.0 / MODEL_IMAGE_SIZE
+            self.bboxes[i][1] *= self.pixmap.height() * 1.0 / MODEL_IMAGE_SIZE
+            self.bboxes[i][2] *= self.pixmap.width() * 1.0 / MODEL_IMAGE_SIZE
+            self.bboxes[i][3] *= self.pixmap.height() * 1.0 / MODEL_IMAGE_SIZE
+            coord = [int(self.bboxes[i][0]), int(self.bboxes[i][1]), int(self.bboxes[i][2]-self.bboxes[i][0]), int(self.bboxes[i][3]-self.bboxes[i][1])]
+            painter.drawRect(*coord)
         painter.end()
 
     def draw_contours(self):

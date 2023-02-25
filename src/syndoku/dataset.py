@@ -21,13 +21,6 @@ def document_iterate(element):
                 yield element
 
 class SyndokuDataset(Dataset):
-    label_dict = {
-        'token': 1,
-        'image': 2,
-        'bullet': 3,
-    }
-    num_classes = len(list(label_dict.keys()))
-
     def __init__(self, root_dir, transforms):
         """
         Args:
@@ -37,6 +30,14 @@ class SyndokuDataset(Dataset):
         self.root_dir = root_dir
         self.transforms = transforms
         self.files = sorted(glob.glob(os.path.join(self.root_dir, '*.png')))
+        # printable ASCII chars
+        self.label_dict = {chr(c):c-32 for c in range(32, 126 + 1)}
+        self.label_dict.update({
+            'token': 96,
+            'image': 97,
+            'bullet': 98,
+        })
+        self.num_classes = len(list(self.label_dict.keys()))
 
     def get_classes(self):
         return list(self.label_dict.keys())
@@ -67,6 +68,9 @@ class SyndokuDataset(Dataset):
             if element['label'] in self.label_dict:
                 bboxes.append((element['bbox']['x1'], element['bbox']['y1'], element['bbox']['x2'], element['bbox']['y2']))
                 labels.append(self.label_dict[element['label']])
+            elif element['label'] == 'glyph':
+                bboxes.append((element['bbox']['x1'], element['bbox']['y1'], element['bbox']['x2'], element['bbox']['y2']))
+                labels.append(self.label_dict[element['text']])
 
         # prepare the target dictionary
         labels = torch.as_tensor(labels, dtype=torch.int64)
@@ -75,10 +79,7 @@ class SyndokuDataset(Dataset):
         # Check for degenerate boxes
         self.fix_degenerate_boxes(bboxes)
 
-        target = {
-            'boxes': bboxes,
-            'labels': labels,
-        }
-        # if self.transforms is not None:
-        img, target = self.transforms(img, target)
+        target = {'boxes': bboxes, 'labels': labels}
+        if self.transforms:
+            img, target = self.transforms(img, target)
         return img, target
