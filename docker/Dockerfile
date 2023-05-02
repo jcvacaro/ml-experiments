@@ -1,16 +1,23 @@
-FROM python:3.9-slim
+FROM paperspace/gradient-base:pt112-tf29-jax0317-py39-20230125
 
 # Ubuntu packages
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
         build-essential \
         ca-certificates \
-        curl \
-        git \
+        ghostscript \
         locales \
         nano \
-        unzip \
-        wget \
+        poppler-utils \
+        texlive \
+        texlive-fonts-extra \
+        texlive-latex-extra \
+        texlive-luatex \
+        texlive-pictures \
     && rm -rf /var/lib/apt/lists/*
+
+# Rust
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Set the locale: https://stackoverflow.com/questions/28405902/how-to-set-the-locale-inside-a-debian-ubuntu-docker-container
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -21,12 +28,11 @@ ENV LC_ALL en_US.UTF-8
 
 # pip packages
 RUN pip3 install \
-    albumentations \
-    jupyter \
-    optuna \
+    accelerate \
+    evaluate \
+    jsonlines \
+    kaggle \
     mlflow \
+    optuna \
     pycocotools \
-    pytorch-lightning \
-    torch==1.9.0+cpu torchvision==0.10.0+cpu torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
-
-WORKDIR "/workspace"
+    torchmetrics
